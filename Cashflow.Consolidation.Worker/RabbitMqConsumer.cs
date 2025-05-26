@@ -4,7 +4,6 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
-using NUlid; 
 
 namespace Cashflow.Operations.Api.Infrastructure.Messaging;
 
@@ -19,9 +18,29 @@ public class RabbitMqConsumer : BackgroundService
     {
         _channel = await _connection.CreateChannelAsync();
 
-        await _channel.ExchangeDeclareAsync("cashflow.exchange", ExchangeType.Fanout, durable: true);
-        var queue = await _channel.QueueDeclareAsync(); 
-        await _channel.QueueBindAsync(queue.QueueName, "cashflow.exchange", "");
+        await _channel.QueueDeclareAsync(
+            queue: "cashflow.deadletter",
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            cancellationToken: stoppingToken);
+
+        var args = new Dictionary<string, object>
+        {
+            { "x-dead-letter-exchange", string.Empty },
+            { "x-dead-letter-routing-key", "cashflow.deadletter" }
+        };
+
+        await _channel.QueueDeclareAsync(
+            queue: "cashflow.operations",
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: args,
+            cancellationToken: stoppingToken);
+
+        await _channel.ExchangeDeclareAsync("cashflow.exchange", ExchangeType.Fanout, durable: true, cancellationToken: stoppingToken);
+        await _channel.QueueBindAsync("cashflow.operations", "cashflow.exchange", string.Empty, cancellationToken: stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (model, ea) =>
@@ -33,24 +52,31 @@ public class RabbitMqConsumer : BackgroundService
             {
                 var options = new JsonSerializerOptions
                 {
-                    PropertyNameCaseInsensitive = true // ← ignora diferença entre "id" e "Id"
+                    PropertyNameCaseInsensitive = true
                 };
-
                 options.Converters.Add(new UlidJsonConverter());
 
                 var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json, options);
 
-                Console.WriteLine($"[RabbitMQ] Evento recebido: {@event?.Id.ToString()} | Valor: {@event?.Amount} | Tipo: {@event?.Type}");
+                Console.WriteLine($"[RabbitMQ] Evento recebido: {@event?.Id} | Valor: {@event?.Amount} | Tipo: {@event?.Type}");
+
+                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[RabbitMQ] Erro ao processar mensagem: {ex.Message}");
+
+                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false);
             }
 
             await Task.Yield();
         };
 
-        await _channel.BasicConsumeAsync(queue: queue, autoAck: true, consumer: consumer);
+        await _channel.BasicConsumeAsync(
+            queue: "cashflow.operations",
+            autoAck: false,
+            consumer: consumer,
+            cancellationToken: stoppingToken);
     }
 
     public override void Dispose()

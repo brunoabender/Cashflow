@@ -1,19 +1,18 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /build
 
-COPY . .    
+COPY . .   
 
-WORKDIR /build/Cashflow.Operations.Api
+WORKDIR /build/Cashflow.Consolidation.Worker
 
 RUN dotnet restore
-RUN dotnet publish -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c $BUILD_CONFIGURATION -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "Cashflow.Operations.Api.dll"]
+ENTRYPOINT ["dotnet", "Cashflow.Consolidation.Worker.dll"]

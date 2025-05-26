@@ -1,25 +1,25 @@
 ﻿using Cashflow.Operations.Api.Infrastructure.Messaging;
 using RabbitMQ.Client;
 
+var builder = Host.CreateApplicationBuilder(args);
 
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
+builder.Services.AddSingleton<IConnection>(sp =>
+{
+    var config = builder.Configuration["Rabbit:Host"] ?? "localhost";
+    var rabbitHost = builder.Configuration["Rabbit:Host"] ?? "localhost";
+    var rabbitPort = int.TryParse(builder.Configuration["Rabbit:Port"], out var port) ? port : 5672;
+
+    var factory = new ConnectionFactory
     {
-        services.AddSingleton(sp =>
-        {
-            var factory = new ConnectionFactory
-            {
-                HostName = "localhost",
-                Port = 5672,
-                UserName = "guest",
-                Password = "guest"
-            };
+        HostName = rabbitHost,
+        Port = rabbitPort,
+        UserName = builder.Configuration["Rabbit:UserName"] ?? "guest",
+        Password = builder.Configuration["Rabbit:Password"] ?? "guest"
+    };
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
 
-            return factory.CreateConnectionAsync().GetAwaiter().GetResult();
-        });
-        services.AddHostedService<RabbitMqConsumer>();
+builder.Services.AddHostedService<RabbitMqConsumer>();
 
-    })
-    .Build();
-
-await host.RunAsync();
+var host = builder.Build();
+host.Run();
