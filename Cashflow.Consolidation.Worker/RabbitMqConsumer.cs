@@ -1,8 +1,10 @@
-﻿using System.Text;
-using System.Text.Json;
-using Cashflow.SharedKernel.Event;
+﻿using Cashflow.SharedKernel.Event;
+using Cashflow.SharedKernel.Json.Converter;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System.Text;
+using System.Text.Json;
+using NUlid; 
 
 namespace Cashflow.Operations.Api.Infrastructure.Messaging;
 
@@ -29,7 +31,15 @@ public class RabbitMqConsumer : BackgroundService
 
             try
             {
-                var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true // ← ignora diferença entre "id" e "Id"
+                };
+
+                options.Converters.Add(new UlidJsonConverter());
+
+                var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json, options);
+
                 Console.WriteLine($"[RabbitMQ] Evento recebido: {@event?.Id.ToString()} | Valor: {@event?.Amount} | Tipo: {@event?.Type}");
             }
             catch (Exception ex)
