@@ -5,6 +5,7 @@ using Cashflow.SharedKernel.Idempotency;
 using Cashflow.SharedKernel.Json.Converter;
 using Cashflow.SharedKernel.Messaging;
 using FluentValidation;
+using RabbitMQ.Client;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
 
@@ -14,7 +15,20 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IMessagePublisher, InMemoryPublisher>();
+builder.Services.AddSingleton(sp =>
+{
+    var factory = new ConnectionFactory
+    {
+        HostName = "localhost",
+        Port = 5672,
+        UserName = "guest",
+        Password = "guest"
+    };
+
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
+
+builder.Services.AddScoped<IMessagePublisher, RabbitMqPublisher>();
 builder.Services.Decorate<IMessagePublisher, ResilientPublisher>();
 builder.Services.AddScoped<IIdempotencyStore, RedisIdempotencyStore>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTransactionValidator.CreateTransactionRequestValidator>();

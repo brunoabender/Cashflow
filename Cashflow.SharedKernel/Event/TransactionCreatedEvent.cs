@@ -2,7 +2,7 @@
 using Cashflow.SharedKernel.Messaging;
 using NUlid;
 
-namespace Cashflow.Operations.Api.Features.CreateTransaction;
+namespace Cashflow.SharedKernel.Event;
 
 public record TransactionCreatedEvent : IDomainEvent
 {

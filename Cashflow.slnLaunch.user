@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Novo Perfil",
+    "Projects": [
+      {
+        "Path": "Cashflow.Consolidation.Worker\\Cashflow.Consolidation.Worker.csproj",
+        "Action": "Start",
+        "DebugTarget": "Cashflow.Consolidation.Worker"
+      },
+      {
+        "Path": "Cashflow.Operations.Api\\Cashflow.Operations.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      }
+    ]
+  }
+]

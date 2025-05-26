@@ -35,6 +35,5 @@ public class ResilientPublisher : IMessagePublisher
         _policy = Policy.WrapAsync(retry, circuitBreaker);
     }
 
-
     public async Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) where T : IDomainEvent => await _policy.ExecuteAsync(() => _messagePublisher.PublishAsync(message, cancellationToken));
 }

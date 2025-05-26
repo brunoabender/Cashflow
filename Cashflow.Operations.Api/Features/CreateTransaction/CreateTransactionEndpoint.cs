@@ -1,4 +1,5 @@
-﻿using Cashflow.SharedKernel.Idempotency;
+﻿using Cashflow.SharedKernel.Event;
+using Cashflow.SharedKernel.Idempotency;
 using Cashflow.SharedKernel.Messaging;
 using FluentResults;
 using FluentValidation;
