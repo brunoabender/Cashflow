@@ -7,7 +7,6 @@ using FluentValidation;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using RabbitMQ.Client;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -21,9 +20,7 @@ internal class Program
         var config = builder.Configuration;
 
         var redisConn = config["Redis:ConnectionString"] ?? "redis:6379";
-        var rabbitUser = config["Rabbit:UserName"] ?? "guest";
-        var rabbitPass = config["Rabbit:Password"] ?? "guest";
-        var rabbitHost = config["Rabbit:Host"] ?? "rabbitmq";
+        
 
         // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>

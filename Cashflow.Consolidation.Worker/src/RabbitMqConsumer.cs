@@ -26,10 +26,9 @@ public class RabbitMqConsumer(IConnection connection, IConfiguration config) : B
             { "x-dead-letter-routing-key", "cashflow.deadletter" }
         };
 
-        
         await _channel.QueueDeclareAsync("cashflow.operations", durable: true, exclusive: false, autoDelete: false, arguments: args!, cancellationToken: stoppingToken);
         await _channel.ExchangeDeclareAsync("cashflow.exchange", ExchangeType.Fanout, durable: true, cancellationToken: stoppingToken);
-        await _channel.QueueBindAsync("cashflow.operations", "cashflow.exchange", "", cancellationToken: stoppingToken);
+        await _channel.QueueBindAsync("cashflow.operations", "cashflow.exchange", string.Empty, cancellationToken: stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (model, ea) =>
@@ -52,7 +51,7 @@ public class RabbitMqConsumer(IConnection connection, IConfiguration config) : B
 
                 using var tx = conn.BeginTransaction();
 
-                var sql = "INSERT INTO transactions (id, amount, type, timestamp, id_potency_key ) VALUES (@Id, @Amount, @Type, @Timestamp, @IdPotencyKey)";
+                var sql = "INSERT INTO transactions (id, amount, type, timestamp, id_potency_key) VALUES (@Id, @Amount, @Type, @Timestamp, @IdPotencyKey)";
 
                 await conn.ExecuteAsync(sql, @event, tx);
                 await tx.CommitAsync(stoppingToken);

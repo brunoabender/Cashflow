@@ -1,16 +1,16 @@
 services:
- # --- RabbitMQ ---
+  # --- RabbitMQ ---
   rabbitmq:
     image: rabbitmq:3-management
     container_name: cashflow-rabbitmq
     ports:
-      - "5672:5672"     # AMQP
-      - "15672:15672"   # Web UI
+      - "5672:5672"
+      - "15672:15672"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      test: ["CMD", "rabbitmqctl", "status"]
       interval: 30s
       timeout: 10s
-      retries: 20 
+      retries: 20
     networks:
       - cashflow-network
 
@@ -40,6 +40,11 @@ services:
       - "5432:5432"
     volumes:
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cashflowdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - cashflow-network
 
@@ -56,8 +61,9 @@ services:
       redis:
         condition: service_healthy
       postgres:
-        condition: service_started
+        condition: service_healthy
     environment:
+      - ASPNETCORE_URLS=http://+:8080
       - RabbitMQ__HostName=rabbitmq
       - Redis__Host=redis
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
@@ -78,7 +84,7 @@ services:
       redis:
         condition: service_healthy
       postgres:
-        condition: service_started
+        condition: service_healthy
     environment:
       - RabbitMQ__HostName=rabbitmq
       - Redis__Host=redis
@@ -98,13 +104,14 @@ services:
       redis:
         condition: service_healthy
       postgres:
-        condition: service_started
+        condition: service_healthy
     environment:
+      - ASPNETCORE_URLS=http://+:8084
       - RabbitMQ__HostName=rabbitmq
       - Redis__Host=redis
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     ports:
-      - "8081:8080"
+      - "8082:8084"
     networks:
       - cashflow-network
 
