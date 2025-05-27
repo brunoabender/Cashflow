@@ -15,7 +15,7 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var config = builder.Configuration;
-        var redisConn = config["Redis:ConnectionString"] ?? "localhost:6379";
+        var redisConn = config["Redis:ConnectionString"] ?? "redis:6379";
 
         // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
