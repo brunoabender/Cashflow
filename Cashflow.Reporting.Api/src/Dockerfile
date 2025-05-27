@@ -12,19 +12,20 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Cashflow.csproj", "."]
-RUN dotnet restore "./Cashflow.csproj"
+COPY ["Cashflow.Reporting.Api/src/Cashflow.Reporting.Api.csproj", "Cashflow.Reporting.Api/src/"]
+COPY ["Cashflow.SharedKernel/Cashflow.SharedKernel.csproj", "Cashflow.SharedKernel/"]
+RUN dotnet restore "./Cashflow.Reporting.Api/src/Cashflow.Reporting.Api.csproj"
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "./Cashflow.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/Cashflow.Reporting.Api/src"
+RUN dotnet build "./Cashflow.Reporting.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Esta fase é usada para publicar o projeto de serviço a ser copiado para a fase final
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Cashflow.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Cashflow.Reporting.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Esta fase é usada na produção ou quando executada no VS no modo normal (padrão quando não está usando a configuração de Depuração)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Cashflow.dll"]
+ENTRYPOINT ["dotnet", "Cashflow.Reporting.Api.dll"]

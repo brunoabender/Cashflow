@@ -6,7 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>fbc9fda0-58cd-400f-94f7-2679639164fb</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>.</DockerfileContext>
+    <DockerfileContext>..\..</DockerfileContext>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,10 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Cashflow.SharedKernel\Cashflow.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,11 +1,11 @@
-﻿using Cashflow.Operations.Api.Infrastructure.Messaging;
+﻿using Cashflow.Consolidation.Worker;
+using Cashflow.Operations.Api.Infrastructure.Messaging;
 using RabbitMQ.Client;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton<IConnection>(sp =>
 {
-    var config = builder.Configuration["Rabbit:Host"] ?? "localhost";
     var rabbitHost = builder.Configuration["Rabbit:Host"] ?? "localhost";
     var rabbitPort = int.TryParse(builder.Configuration["Rabbit:Port"], out var port) ? port : 5672;
 
@@ -22,4 +22,4 @@ builder.Services.AddSingleton<IConnection>(sp =>
 builder.Services.AddHostedService<RabbitMqConsumer>();
 
 var host = builder.Build();
-host.Run();
+await host.RunAsync();

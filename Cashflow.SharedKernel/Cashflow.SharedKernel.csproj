@@ -10,4 +10,8 @@
     <PackageReference Include="NUlid" Version="1.7.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Transaction\" />
+  </ItemGroup>
+
 </Project>

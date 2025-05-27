@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Cashflow.Consolidation.Worker": {
+      "commandName": "Project"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

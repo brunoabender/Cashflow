@@ -4,16 +4,21 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerfileContext>..\..</DockerfileContext>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Dapper" Version="2.1.66" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
+		<PackageReference Include="Npgsql" Version="9.0.3" />
 		<PackageReference Include="NUlid" Version="1.7.3" />
 		<PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Cashflow.SharedKernel\Cashflow.SharedKernel.csproj" />
+	  <ProjectReference Include="..\..\Cashflow.SharedKernel\Cashflow.SharedKernel.csproj" />
 	</ItemGroup>
 
 </Project>

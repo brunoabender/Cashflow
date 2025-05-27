@@ -7,15 +7,10 @@ using RabbitMQ.Client.Events;
 
 namespace Cashflow.Consolidation.Worker;
 
-public class RabbitMqDlqReprocessor : BackgroundService
+public class RabbitMqDlqReprocessor(IConnection connection) : BackgroundService
 {
-    private readonly IConnection _connection;
+    private readonly IConnection _connection = connection!;
     private IChannel _channel = null!;
-
-    public RabbitMqDlqReprocessor(IConnection connection)
-    {
-        _connection = connection;
-    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

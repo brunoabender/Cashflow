@@ -1,49 +1,95 @@
-version: "3.9"
-
 services:
+
+ # --- RabbitMQ ---
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq
+    container_name: cashflow-rabbitmq
     ports:
-      - "5672:5672"      # porta AMQP
-      - "15672:15672"    # UI web
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Web UI
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
+  # --- Redis ---
   redis:
     image: redis:7
-    container_name: redis
+    container_name: cashflow-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  api:
-    build:
-      context: .
-      dockerfile: Cashflow.Operations.Api/Dockerfile
-    container_name: cashflow-api
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:16
+    container_name: cashflow-postgres
+    environment:
+      POSTGRES_DB: cashflowdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "5000:8080"
-    depends_on:
-      - rabbitmq
-      - redis
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Redis__ConnectionString=redis:6379
-      - Rabbit__Host=rabbitmq
-      - Rabbit__Port=5672
-      - Rabbit__UserName=guest
-      - Rabbit__Password=guest
+      - "5432:5432"
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  worker:
+  # --- APIs e Workers ---
+  cashflow.operations.api:
+    image: ${DOCKER_REGISTRY-}cashflowoperationsapi
     build:
       context: .
-      dockerfile: Cashflow.Consolidation.Worker/Dockerfile
-    container_name: cashflow-worker
+      dockerfile: Cashflow.Operations.Api/src/Dockerfile
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     environment:
-      - Rabbit__Host=rabbitmq
-      - Rabbit__Port=5672
-      - Rabbit__UserName=guest
-      - Rabbit__Password=guest
+      - RabbitMQ__HostName=rabbitmq
+      - Redis__Host=redis
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+    ports:
+      - "8080:8080"
+
+  cashflow.consolidation.worker:
+    image: ${DOCKER_REGISTRY-}cashflowconsolidationworker
+    build:
+      context: .
+      dockerfile: Cashflow.Consolidation.Worker/src/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    environment:
+      - RabbitMQ__HostName=rabbitmq
+      - Redis__Host=redis
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+
+  cashflow.reporting.api:
+    image: ${DOCKER_REGISTRY-}cashflowreportingapi
+    build:
+      context: .
+      dockerfile: Cashflow.Reporting.Api/src/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    environment:
+      - RabbitMQ__HostName=rabbitmq
+      - Redis__Host=redis
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+    ports:
+      - "8081:8080"
