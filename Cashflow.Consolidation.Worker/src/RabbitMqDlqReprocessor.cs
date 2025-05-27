@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Cashflow.SharedKernel.Event;
-using Cashflow.SharedKernel.Json.Converter;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -47,8 +46,7 @@ public class RabbitMqDlqReprocessor(IConnection connection) : BackgroundService
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    options.Converters.Add(new UlidJsonConverter());
-
+                    
                     var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json, options);
 
                     Console.WriteLine($"[DLQ Reprocessador] Tentativa {retryCount + 1}: {@event?.Id} | Valor: {@event?.Amount} | Tipo: {@event?.Type}");
@@ -93,9 +91,4 @@ public class RabbitMqDlqReprocessor(IConnection connection) : BackgroundService
             cancellationToken: stoppingToken);
     }
 
-    public override void Dispose()
-    {
-        _channel.DisposeAsync();
-        base.Dispose();
-    }
 }

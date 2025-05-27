@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Cashflow.SharedKernel.Event;
-using Cashflow.SharedKernel.Json.Converter;
 using Dapper;
 using Npgsql;
 using RabbitMQ.Client;
@@ -44,7 +43,6 @@ public class RabbitMqConsumer(IConnection connection, IConfiguration config) : B
                 {
                     PropertyNameCaseInsensitive = true
                 };
-                options.Converters.Add(new UlidJsonConverter());
 
                 var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json, options)
                              ?? throw new InvalidOperationException("Evento nulo");
@@ -54,7 +52,7 @@ public class RabbitMqConsumer(IConnection connection, IConfiguration config) : B
 
                 using var tx = conn.BeginTransaction();
 
-                var sql = "INSERT INTO transactions (id, amount, type, timestamp, idempotency_key) VALUES (@Id, @Amount, @Type, @Timestamp, @IdPotencyKey)";
+                var sql = "INSERT INTO transactions (id, amount, type, timestamp, id_potency_key ) VALUES (@Id, @Amount, @Type, @Timestamp, @IdPotencyKey)";
 
                 await conn.ExecuteAsync(sql, @event, tx);
                 await tx.CommitAsync(stoppingToken);
@@ -75,9 +73,4 @@ public class RabbitMqConsumer(IConnection connection, IConfiguration config) : B
         await _channel.BasicConsumeAsync("cashflow.operations", autoAck: false, consumer, stoppingToken);
     }
 
-    public override void Dispose()
-    {
-        _channel?.DisposeAsync();
-        base.Dispose();
-    }
 }

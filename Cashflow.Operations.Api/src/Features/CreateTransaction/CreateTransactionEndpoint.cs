@@ -3,7 +3,6 @@ using Cashflow.SharedKernel.Idempotency;
 using Cashflow.SharedKernel.Messaging;
 using FluentResults;
 using FluentValidation;
-using NUlid;
 
 namespace Cashflow.Operations.Api.Features.CreateTransaction
 {
@@ -36,7 +35,7 @@ namespace Cashflow.Operations.Api.Features.CreateTransaction
                 return Result.Fail("Requisição já processada anteriormente.");
             }
 
-            var @event = new TransactionCreatedEvent(Ulid.NewUlid(), request.Amount, request.Type, DateTime.UtcNow, request.IdempotencyKey);
+            var @event = new TransactionCreatedEvent(Guid.NewGuid(), request.Amount, request.Type, DateTime.UtcNow, request.IdempotencyKey);
 
             try
             {

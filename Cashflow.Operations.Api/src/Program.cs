@@ -2,7 +2,6 @@ using Cashflow.Operations.Api.Features.CreateTransaction;
 using Cashflow.Operations.Api.Infrastructure.Idempotency;
 using Cashflow.Operations.Api.Infrastructure.Messaging;
 using Cashflow.SharedKernel.Idempotency;
-using Cashflow.SharedKernel.Json.Converter;
 using Cashflow.SharedKernel.Messaging;
 using FluentValidation;
 using HealthChecks.UI.Client;
@@ -26,40 +25,30 @@ internal class Program
         var rabbitPass = config["Rabbit:Password"] ?? "guest";
         var rabbitHost = config["Rabbit:Host"] ?? "rabbitmq";
 
-        // Redis com retry
+        // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
             var options = ConfigurationOptions.Parse($"{redisConn},abortConnect=false");
             return ConnectionMultiplexer.Connect(options);
         });
 
-        // RabbitMQ com inicialização segura e async
+        // RabbitMQ
         builder.Services.AddSingleton<RabbitMqConnectionProvider>();
-        builder.Services.AddSingleton<IConnection>(sp =>
-            sp.GetRequiredService<RabbitMqConnectionProvider>().Connection);
-        builder.Services.AddHostedService(sp =>
-            sp.GetRequiredService<RabbitMqConnectionProvider>());
+        builder.Services.AddSingleton(sp => sp.GetRequiredService<RabbitMqConnectionProvider>().Connection);
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<RabbitMqConnectionProvider>());
 
         // HealthChecks
         builder.Services.AddHealthChecks()
             .AddRedis(redisConn, name: "redis", failureStatus: HealthStatus.Unhealthy)
-            .AddRabbitMQ(sp =>
-            {
-                var provider = sp.GetRequiredService<RabbitMqConnectionProvider>();
-                return provider.Connection;
-            }, name: "rabbitmq");
+            .AddRabbitMQ(sp => { var provider = sp.GetRequiredService<RabbitMqConnectionProvider>(); return provider.Connection;}, name: "rabbitmq", failureStatus: HealthStatus.Unhealthy);
 
         // Application services
         builder.Services.AddScoped<IMessagePublisher, RabbitMqPublisher>();
         builder.Services.Decorate<IMessagePublisher, ResilientPublisher>();
         builder.Services.AddScoped<IIdempotencyStore, RedisIdempotencyStore>();
         builder.Services.AddValidatorsFromAssemblyContaining<CreateTransactionValidator.CreateTransactionRequestValidator>();
+        builder.Services.Configure<JsonSerializerOptions>(options => { options.PropertyNameCaseInsensitive = true; });
 
-        builder.Services.Configure<JsonSerializerOptions>(options =>
-        {
-            options.PropertyNameCaseInsensitive = true;
-            options.Converters.Add(new UlidJsonConverter());
-        });
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();

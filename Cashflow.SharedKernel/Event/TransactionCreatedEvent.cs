@@ -1,18 +1,17 @@
 ﻿using Cashflow.SharedKernel.Enums;
 using Cashflow.SharedKernel.Messaging;
-using NUlid;
 
 namespace Cashflow.SharedKernel.Event;
 
 public record TransactionCreatedEvent : IDomainEvent
 {
-    public Ulid Id { get; init; }
+    public Guid Id { get; init; }
     public decimal Amount { get; init; }
     public TransactionType Type { get; init; }
     public DateTime Timestamp { get; init; }
-    public Ulid IdPotencyKey { get; init; }
+    public Guid IdPotencyKey { get; init; }
 
-    public TransactionCreatedEvent(Ulid id, decimal amount, TransactionType type, DateTime timestamp, Ulid idPotencyKey)
+    public TransactionCreatedEvent(Guid id, decimal amount, TransactionType type, DateTime timestamp, Guid idPotencyKey)
     {
         Id = id;
         Amount = amount;

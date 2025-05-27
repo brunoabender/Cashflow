@@ -1,5 +1,4 @@
 services:
-
  # --- RabbitMQ ---
   rabbitmq:
     image: rabbitmq:3-management
@@ -11,7 +10,9 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 20 
+    networks:
+      - cashflow-network
 
   # --- Redis ---
   redis:
@@ -24,6 +25,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cashflow-network
 
   # --- PostgreSQL ---
   postgres:
@@ -37,6 +40,8 @@ services:
       - "5432:5432"
     volumes:
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cashflow-network
 
   # --- APIs e Workers ---
   cashflow.operations.api:
@@ -44,6 +49,7 @@ services:
     build:
       context: .
       dockerfile: Cashflow.Operations.Api/src/Dockerfile
+    restart: on-failure
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -57,12 +63,15 @@ services:
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     ports:
       - "8080:8080"
+    networks:
+      - cashflow-network
 
   cashflow.consolidation.worker:
     image: ${DOCKER_REGISTRY-}cashflowconsolidationworker
     build:
       context: .
       dockerfile: Cashflow.Consolidation.Worker/src/Dockerfile
+    restart: on-failure
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -74,12 +83,15 @@ services:
       - RabbitMQ__HostName=rabbitmq
       - Redis__Host=redis
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+    networks:
+      - cashflow-network
 
   cashflow.reporting.api:
     image: ${DOCKER_REGISTRY-}cashflowreportingapi
     build:
       context: .
       dockerfile: Cashflow.Reporting.Api/src/Dockerfile
+    restart: on-failure
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -93,3 +105,9 @@ services:
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     ports:
       - "8081:8080"
+    networks:
+      - cashflow-network
+
+networks:
+  cashflow-network:
+    driver: bridge

@@ -6,7 +6,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton<IConnection>(sp =>
 {
-    var rabbitHost = builder.Configuration["Rabbit:Host"] ?? "localhost";
+    var rabbitHost = builder.Configuration["Rabbit:Host"] ?? "rabbitmq";
     var rabbitPort = int.TryParse(builder.Configuration["Rabbit:Port"], out var port) ? port : 5672;
 
     var factory = new ConnectionFactory
