@@ -12,8 +12,6 @@ namespace Cashflow.Reporting.Api.Features.GetBalanceByDate
 
         public async Task<Result<GetBalanceResult>> HandleAsync(DateOnly date)
         {
-            var cacheKey = $"balance:{date:yyyy-MM-dd}";
-
             var cached = await cache.GetAsync(date);
             if (cached.HasValue)
                 return Result.Ok(new GetBalanceResult(cached.Value, TransactionType.All, DateTime.UtcNow));
