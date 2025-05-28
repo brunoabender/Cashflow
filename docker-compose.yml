@@ -87,7 +87,6 @@ services:
         condition: service_healthy
     environment:
       - RabbitMQ__HostName=rabbitmq
-      - Redis__Host=redis
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     networks:
       - cashflow-network
@@ -107,7 +106,6 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8084
-      - RabbitMQ__HostName=rabbitmq
       - Redis__Host=redis
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     ports:

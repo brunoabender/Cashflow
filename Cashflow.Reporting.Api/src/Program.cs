@@ -1,4 +1,6 @@
 using Cashflow.Reporting.Api.Balance;
+using Cashflow.Reporting.Api.Infrastructure.PostgreeConector;
+using Cashflow.Reporting.Api.Infrastructure.PostgresConector;
 using Cashflow.SharedKernel.Balance;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -37,6 +39,7 @@ internal class Program
             return new NpgsqlConnection(config.GetConnectionString("Postgres"));
         });
 
+        builder.Services.AddScoped<IPostgresHandler, PostgresHandler>();
         
 
         // Application services

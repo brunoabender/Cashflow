@@ -1,9 +1,10 @@
 ﻿using Cashflow.Consolidation.Worker;
-using Cashflow.Operations.Api.Infrastructure.Messaging;
+using Cashflow.Consolidation.Worker.Infrastructure.Postgres;
 using RabbitMQ.Client;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Services.AddSingleton<IPostgresHandler, PostgreeHandler>();
 builder.Services.AddSingleton<IConnection>(sp =>
 {
     var rabbitHost = builder.Configuration["Rabbit:Host"] ?? "rabbitmq";
@@ -20,6 +21,8 @@ builder.Services.AddSingleton<IConnection>(sp =>
 });
 
 builder.Services.AddHostedService<RabbitMqConsumer>();
+builder.Services.AddHostedService<RabbitMqDlqReprocessor>();
+
 
 var host = builder.Build();
 await host.RunAsync();

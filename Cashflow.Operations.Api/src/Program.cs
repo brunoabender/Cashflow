@@ -21,11 +21,11 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var config = builder.Configuration;
-        var redisConn = config["Redis:ConnectionString"] ?? "localhost:6379";
+        var redisConn = config["Redis:ConnectionString"] ?? "redis:6379";
 
         var key = Encoding.ASCII.GetBytes("ChaveSecretaMasNesseCasoNaoÉPorqueEstaNoCodigo");
 
-        // 🔐 Autenticação e Autorização
+        // Autenticação e Autorização
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -80,7 +80,7 @@ internal class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
-        // ✅ Swagger + JWT para Scalar
+        //Swagger + JWT para Scalar
         builder.Services.AddSwaggerGen(options =>
         {
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -119,10 +119,10 @@ internal class Program
                 options.RouteTemplate = "/openapi/{documentName}.json";
             });
 
-            app.MapScalarApiReference(); // ativa a UI do Scalar
+            app.MapScalarApiReference(); 
         }
 
-        app.UseAuthentication(); // ✅ Precisa estar antes do UseAuthorization
+        app.UseAuthentication(); 
         app.UseAuthorization();
 
         app.MapControllers();

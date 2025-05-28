@@ -1,8 +1,10 @@
-﻿namespace Cashflow.SharedKernel.Balance
+﻿using Cashflow.SharedKernel.Enums;
+
+namespace Cashflow.SharedKernel.Balance
 {
     public interface IRedisBalanceCache 
     {
-        Task<decimal?> GetAsync(DateOnly date);
-        Task SetAsync(decimal total);
+        Task<Dictionary<TransactionType, decimal>?> GetAsync(DateOnly date);
+        Task SetAsync(Dictionary<TransactionType, decimal> totals);
     }
 }

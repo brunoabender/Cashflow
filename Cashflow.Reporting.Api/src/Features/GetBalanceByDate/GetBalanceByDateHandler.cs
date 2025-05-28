@@ -1,4 +1,5 @@
-﻿using Cashflow.SharedKernel.Balance;
+﻿using Cashflow.Reporting.Api.Infrastructure.PostgresConector;
+using Cashflow.SharedKernel.Balance;
 using Cashflow.SharedKernel.Enums;
 using Dapper;
 using FluentResults;
@@ -6,26 +7,18 @@ using Npgsql;
 
 namespace Cashflow.Reporting.Api.Features.GetBalanceByDate
 {
-    public class GetBalanceByDateHandler(IConfiguration config, IRedisBalanceCache cache)
+    public class GetBalanceByDateHandler(IPostgresHandler postgresHandler, IRedisBalanceCache cache)
     {
-        private readonly string _connectionString = config.GetConnectionString("Postgres")!;
-
-        public async Task<Result<GetBalanceResult>> HandleAsync(DateOnly date)
+        public async Task<Result<Dictionary<TransactionType, decimal>>> HandleAsync(DateOnly date)
         {
             var cached = await cache.GetAsync(date);
-            if (cached.HasValue)
-                return Result.Ok(new GetBalanceResult(cached.Value, TransactionType.All, DateTime.UtcNow));
+            if (cached != null)
+                return Result.Ok(cached);
 
-            await using var conn = new NpgsqlConnection(_connectionString);
-            const string sql = "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE timestamp::date = @Date";
-
-            var balance = await conn.QuerySingleAsync<decimal>(sql, new { Date = date.ToDateTime(TimeOnly.MinValue) });
-
+            var balance = await postgresHandler.GetTotalsByType(date);
             await cache.SetAsync(balance);
 
-            return Result.Ok(new GetBalanceResult(balance, TransactionType.All, DateTime.UtcNow));
+            return Result.Ok(balance);
         }
-
-
     }
 }
