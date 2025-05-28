@@ -23,6 +23,5 @@ builder.Services.AddSingleton<IConnection>(sp =>
 builder.Services.AddHostedService<RabbitMqConsumer>();
 builder.Services.AddHostedService<RabbitMqDlqReprocessor>();
 
-
 var host = builder.Build();
 await host.RunAsync();
