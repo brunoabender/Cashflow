@@ -37,8 +37,6 @@ namespace Cashflow.Consolidation.Tests
             typeof(RabbitMqDlqReprocessor).GetField("_channel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 ?.SetValue(sut, channelMock.Object);
 
-            // Simula o bloco de processamento da mensagem (extrai do handler para método próprio se possível)
-            // Aqui mostramos só a chamada direta do BasicPublishAsync para simular sucesso
             await channelMock.Object.BasicPublishAsync(
                 "cashflow.exchange", "", false, props, new ReadOnlyMemory<byte>(body), CancellationToken.None);
 
@@ -80,7 +78,6 @@ namespace Cashflow.Consolidation.Tests
             typeof(RabbitMqDlqReprocessor).GetField("_channel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 ?.SetValue(sut, channelMock.Object);
 
-            // Simula a lógica de retry manual (ideal refatorar para método testável)
             bool success = false;
             int retryCount = 0;
             while (retryCount < 3 && !success)
@@ -112,7 +109,6 @@ namespace Cashflow.Consolidation.Tests
             var body = Encoding.UTF8.GetBytes(json);
             var props = new BasicProperties();
 
-            // Todas as tentativas falham
             channelMock.Setup(c => c.BasicPublishAsync(
                 "cashflow.exchange", "", false, It.IsAny<BasicProperties>(), It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception("RabbitMQ down"));
@@ -123,7 +119,6 @@ namespace Cashflow.Consolidation.Tests
             typeof(RabbitMqDlqReprocessor).GetField("_channel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 ?.SetValue(sut, channelMock.Object);
 
-            // Simula tentativa 3 vezes e falha todas, envia para fila permanente
             bool success = false;
             int retryCount = 0;
             while (retryCount < 3 && !success)
@@ -173,7 +168,6 @@ namespace Cashflow.Consolidation.Tests
             typeof(RabbitMqDlqReprocessor).GetField("_channel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 ?.SetValue(sut, channelMock.Object);
 
-            // Simule apenas a lógica do handler: falha na deserialização, vai para DLQ permanente
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             bool sentToDlq = false;
             try
@@ -182,7 +176,6 @@ namespace Cashflow.Consolidation.Tests
             }
             catch
             {
-                // Simula envio para fila permanente (DLQ)
                 await channelMock.Object.BasicPublishAsync(
                     string.Empty, "cashflow.deadletter.permanent", false, props, new ReadOnlyMemory<byte>(body), CancellationToken.None);
                 sentToDlq = true;
