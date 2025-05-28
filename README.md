@@ -54,7 +54,8 @@ cd cashflow
 ### **2. Suba a infraestrutura (RabbitMQ, Redis, Postgres)**
 
 ```bash
-docker compose up -d
+docker compose build --no-cache
+docker compose build up
 ```
 
 > Isso irá subir:
@@ -70,6 +71,8 @@ docker compose up -d
 cd src/Cashflow.Operations.Api
 dotnet run
 
+http://localhost:8080/scalar/
+
 # Worker de consolidação
 cd src/Cashflow.Consolidation.Worker
 dotnet run
@@ -77,6 +80,8 @@ dotnet run
 # API de relatórios
 cd src/Cashflow.Reporting.Api
 dotnet run
+
+http://localhost:8082/scalar/
 ```
 
 Ou subir todos via Docker Compose (ajuste nomes conforme seus arquivos):
@@ -126,6 +131,52 @@ Os testes cobrem:
 - **Alta disponibilidade**: possível executar múltiplas instâncias de API/Worker
 
 ---
+
+---
+
+## Docs
+
+Nessa pasta a desenhos e descrições mais detalhadas de algumas escolha e o que faltou
+
+---
+
+## Docs
+
+Nessa pasta a desenhos e descrições mais detalhadas de algumas escolha e o que faltou
+
+---
+
+## 📖 Documentação da API
+
+### Por que escolhi o Scalar?
+
+Escolhi o **Scalar** para documentação da API em vez do Swagger pelos seguintes motivos:
+
+- O suporte ao Swagger UI tradicional para .NET não está mais sendo mantido oficialmente, tornando o uso cada vez mais trabalhoso e dependente de soluções alternativas.
+- O Scalar oferece uma experiência mais moderna, responsiva e amigável, além de suporte nativo ao OpenAPI, facilitando a manutenção da documentação das APIs.
+- Com o Scalar, consigo customizar e integrar melhor com as ferramentas atuais de desenvolvimento.
+
+Dessa forma, mantenho a documentação sempre atualizada, prática e alinhada com os padrões mais modernos de APIs REST.
+
+---
+
+### 🔐 Autenticação - Endpoint de Token
+
+Implementei um endpoint de autenticação para obtenção de token, que será necessário para acessar as rotas protegidas das APIs.
+
+Para obter o token de acesso, faça um POST para:
+
+POST /api/auth/token
+
+
+> **Observação:**  
+> O endpoint de autenticação já está disponível, mas a implementação completa do fluxo de autorização/autenticação ainda está em evolução.
+
+**Como usar:**
+1. Realize a requisição de token no endpoint `/api/Token/get`
+2. Use o token retornado no header `Bearer token` das suas requisições:
+
+![alt text](image.png)
 
 ## 💡 Melhorias Futuras
 
