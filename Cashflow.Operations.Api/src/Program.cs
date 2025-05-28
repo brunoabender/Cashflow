@@ -109,7 +109,6 @@ internal class Program
             });
         });
 
-        // ✅ Criação do app
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())

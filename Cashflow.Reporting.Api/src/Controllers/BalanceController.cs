@@ -15,7 +15,6 @@ public class TransactionsController(IPostgresHandler postgresHandler, IRedisBala
         GetBalanceByDateHandler handler = new(postgresHandler, cache);
 
         var result = await handler.HandleAsync(date);
-
         return result.IsSuccess
             ? Ok(new { date, totals = result.Value })
             : StatusCode(StatusCodes.Status500InternalServerError, result.Errors);
