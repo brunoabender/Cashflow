@@ -2,6 +2,7 @@
 using Cashflow.SharedKernel.Idempotency;
 using Cashflow.SharedKernel.Messaging;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cashflow.Operations.Api.Controllers;
@@ -16,6 +17,7 @@ public class TransactionsController(IMessagePublisher publisher, IIdempotencySto
     private readonly IValidator<CreateTransactionRequest> _validator = validator;
 
     [HttpPost]
+    [Authorize(Policy = "Transacoes")]
     public async Task<IActionResult> Create(CreateTransactionRequest request)
     {
         var endpoint = new CreateTransactionEndpoint(_logger, _validator);
