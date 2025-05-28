@@ -24,6 +24,7 @@ namespace Cashflow.Operations.Api.Features.CreateTransaction
             {
                 _logger.LogWarning("Validação falhou: {Motivo}", validationResult.Errors);
                 var result = Result.Fail("Erro de validação.");
+
                 foreach (var error in validationResult.Errors)
                     result.WithError(error.ErrorMessage);
                 return result;
@@ -39,8 +40,13 @@ namespace Cashflow.Operations.Api.Features.CreateTransaction
 
             try
             {
+                var result = await idempotencyStore.TryCreateAsync(@event.IdPotencyKey);
+
+                if (!result)
+                    return Result.Fail("Não foi possível colocar uma chave de idpotencia na transação.");
+
                 await publisher.PublishAsync(@event);
-                await idempotencyStore.RegisterAsync(@event.IdPotencyKey);
+                
 
                 _logger.LogInformation("Transação registrada com sucesso: {TransactionId}", @event.Id);
                 return Result.Ok();

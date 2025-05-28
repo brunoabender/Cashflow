@@ -3,6 +3,6 @@
     public interface IIdempotencyStore
     {
         Task<bool> ExistsAsync(Guid key);
-        Task RegisterAsync(Guid key);
+        Task<bool> TryCreateAsync(Guid key);
     }
 }
