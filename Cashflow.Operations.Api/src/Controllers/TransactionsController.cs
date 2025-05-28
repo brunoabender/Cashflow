@@ -24,7 +24,7 @@ public class TransactionsController(IMessagePublisher publisher, IIdempotencySto
         var result = await endpoint.Handle(request, _publisher, _idempotencyStore);
 
         if (result.IsSuccess)
-            return Accepted(new { message = "Transação criada com sucesso." });
+            return Accepted(new { message = $"Transação criada com sucesso. Id: {result.Value}" });
 
         return BadRequest(result.Errors.Select(e => e.Message));
     }

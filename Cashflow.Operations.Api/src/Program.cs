@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
 using System.Text;
@@ -24,6 +26,21 @@ internal class Program
         var redisConn = config["Redis:ConnectionString"] ?? "redis:6379";
 
         var key = Encoding.ASCII.GetBytes("ChaveSecretaMasNesseCasoNaoÉPorqueEstaNoCodigo");
+
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+
+        //OpenTelemetry
+        builder.Logging.AddOpenTelemetry(options =>
+        {
+            options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("cashflow-api"));
+            options.AddOtlpExporter(otlpOptions =>
+            {
+                otlpOptions.Endpoint = new Uri("http://otel-collector:4317");
+                otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+            });
+        });
+
 
         // Autenticação e Autorização
         builder.Services.AddAuthentication(options =>

@@ -11,7 +11,7 @@ namespace Cashflow.Operations.Api.Features.CreateTransaction
         private readonly ILogger<CreateTransactionEndpoint> _logger = logger;
         private readonly IValidator<CreateTransactionRequest> _validator = validator;
 
-        public async Task<Result> Handle(
+        public async Task<Result<Guid>> Handle(
          CreateTransactionRequest request,
          IMessagePublisher publisher,
          IIdempotencyStore idempotencyStore)
@@ -49,7 +49,7 @@ namespace Cashflow.Operations.Api.Features.CreateTransaction
                 
 
                 _logger.LogInformation("Transação registrada com sucesso: {TransactionId}", @event.Id);
-                return Result.Ok();
+                return Result.Ok(@event.Id);
             }
             catch (Exception ex)
             {
