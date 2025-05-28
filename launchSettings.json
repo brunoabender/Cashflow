@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "cashflow.reporting.api": "StartDebugging",
+        "cashflow.operations.api": "StartDebugging",
+        "cashflow.consolidation.worker": "StartDebugging"
+      }
+    }
+  }
+}

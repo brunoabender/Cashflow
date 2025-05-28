@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NUlid" Version="1.7.3" />
+    <Folder Include="Transaction\" />
   </ItemGroup>
 
 </Project>

@@ -1,11 +1,9 @@
-﻿using NUlid;
-
-namespace Cashflow.SharedKernel.Messaging
+﻿namespace Cashflow.SharedKernel.Messaging
 {
     public interface IDomainEvent
     {
         DateTime Timestamp { get; }
-        Ulid IdPotencyKey { get; }
+        Guid IdPotencyKey { get; }
     }
 
 }

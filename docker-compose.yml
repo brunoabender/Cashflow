@@ -1,0 +1,153 @@
+services:
+  # --- RabbitMQ ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: cashflow-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+    networks:
+      - cashflow-network
+
+  # --- Redis ---
+  redis:
+    image: redis:7
+    container_name: cashflow-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cashflow-network
+
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:16
+    container_name: cashflow-postgres
+    environment:
+      POSTGRES_DB: cashflowdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cashflowdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - cashflow-network
+
+  # --- APIs e Workers ---
+  cashflow.operations.api:
+    image: ${DOCKER_REGISTRY-}cashflowoperationsapi
+    build:
+      context: .
+      dockerfile: Cashflow.Operations.Api/src/Dockerfile
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - RabbitMQ__HostName=rabbitmq
+      - Redis__Host=redis
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - cashflow-network
+
+  cashflow.consolidation.worker:
+    image: ${DOCKER_REGISTRY-}cashflowconsolidationworker
+    build:
+      context: .
+      dockerfile: Cashflow.Consolidation.Worker/src/Dockerfile
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - RabbitMQ__HostName=rabbitmq
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+    networks:
+      - cashflow-network
+
+  cashflow.reporting.api:
+    image: ${DOCKER_REGISTRY-}cashflowreportingapi
+    build:
+      context: .
+      dockerfile: Cashflow.Reporting.Api/src/Dockerfile
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_URLS=http://+:8084
+      - Redis__Host=redis
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+    ports:
+      - "8082:8084"
+    networks:
+      - cashflow-network
+
+  # --- Grafana ---
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: cashflow-grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - loki
+    networks:
+      - cashflow-network
+
+  # --- Loki (logs backend) ---
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: cashflow-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - cashflow-network
+
+  # --- Promtail (log collector) ---
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: cashflow-promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - cashflow-network
+
+networks:
+  cashflow-network:
+    driver: bridge

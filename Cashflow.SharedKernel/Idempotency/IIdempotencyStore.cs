@@ -1,10 +1,8 @@
-﻿using NUlid;
-
-namespace Cashflow.SharedKernel.Idempotency
+﻿namespace Cashflow.SharedKernel.Idempotency
 {
     public interface IIdempotencyStore
     {
-        Task<bool> ExistsAsync(Ulid key);
-        Task RegisterAsync(Ulid key);
+        Task<bool> ExistsAsync(Guid key);
+        Task<bool> TryCreateAsync(Guid key);
     }
 }
