@@ -1,0 +1,5 @@
+Observabilidade: Ampliar os dashboards do Grafana para cobrir métricas de negócio e saúde dos serviços. Configurar alertas automáticos e instrumentar as APIs com OpenTelemetry Metrics e Tracing para rastreamento de chamadas e análise de performance fim-a-fim.
+
+Criptografia e Segurança: Fortalecer a segurança implementando TLS/HTTPS em todos os endpoints, ativando conexões seguras no RabbitMQ, integrando gerenciadores de segredos, e aplicando autenticação JWT nas APIs. Avaliar a necessidade de criptografia em repouso no PostgreSQL e cache, além de controles avançados de acesso.
+
+Balanceamento de Carga: Propor o uso de balanceadores de carga como NGINX ou Traefik para distribuir requisições entre múltiplas instâncias das APIs, viabilizando escalabilidade horizontal e alta disponibilidade, preparando o ambiente para produção em cloud com balanceadores gerenciados.
