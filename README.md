@@ -57,6 +57,7 @@ cd cashflow
 docker compose build --no-cache
 docker compose build up
 ```
+A execução das apis e workers, pode demorar um tempo porque eles tem depends_on dos serviços como Redis, Rabbit e Postgress. Executando essa parte de cima, todos os projetos vão ser inicializados, só que pode demorar para aparecer.
 
 > Isso irá subir:
 > - PostgreSQL (padrão na porta 5432)
@@ -87,7 +88,8 @@ http://localhost:8082/scalar/
 Ou subir todos via Docker Compose (ajuste nomes conforme seus arquivos):
 
 ```bash
-docker compose up --build
+docker compose build --no-cache
+docker compose up
 ```
 
 ---
@@ -104,6 +106,7 @@ Os testes cobrem:
 - Casos de sucesso e falha nos lançamentos
 - Processamento de eventos no Worker
 - Consulta e cache no Reporting
+- Existem começo dos teste de integração com TestContainer e estrura em PR. (Acompanha migrations)
 
 ---
 
@@ -180,12 +183,19 @@ POST /api/auth/token
 
 ## 💡 Melhorias Futuras
 
-- Implementar autenticação/autorização (JWT)
-- Adicionar observabilidade (metrics, tracing, logging distribuído)
-- Melhorar gestão de erros e retries no worker
-- Configurar readiness/liveness probes para Kubernetes
-- Implementar monitoramento de saúde dos serviços (Health Checks completos)
+- Implementar autenticação/autorização (JWT).
+- Adicionar observabilidade (metrics, tracing, logging distribuído).
+- Melhorar gestão de erros e retries no worker.
+- Configurar readiness/liveness probes para Kubernetes.
+- Implementar monitoramento de saúde dos serviços (Health Checks completos).
+- Tem um PR aberto para Main com a parte de migrations e o começo dos testes de integração. Os testes estão falhando porque o a migration não estava conseguindo subir para o banco e trava do worker para frente.
 
+---
+
+## 💡 Observação
+
+- Todo o histórico está registrado nos commits. Eu tive tempo mas consegui pegar o projeto a pouco tempo e gostaria de colocar um tempo limite para ver o que eu era capaz de fazer e o que não. E como documentar essa jornada.
+- Isso foi muito divertido, e agradeço bastante pelo desafio. Qualquer coisa, só chamar
 ---
 
 
