@@ -87,22 +87,6 @@ Usuário
 
 ---
 
-## 🏁 Requisitos Não Funcionais Atendidos
-
-- **Alta disponibilidade:**  
-  Serviços independentes, com possibilidade de múltiplas instâncias e failover.
-
-- **Performance:**  
-  Uso de Redis, consultas otimizadas e cache distribuído.
-
-- **Confiabilidade:**  
-  Persistência robusta em PostgreSQL e mensageria confiável.
-
-- **Monitoramento e observabilidade:**  
-  Preparado para logs estruturados, métricas e tracing (não incluso, mas pronto para expansão).
-
----
-
 ## 🔄 Possíveis Evoluções Futuras
 
 - **Autenticação/autorização JWT integrada**
@@ -123,13 +107,6 @@ Usuário
 - **Vertical Slice Architecture** para separação de responsabilidades e fácil manutenção.
 - **Testes automatizados** cobrindo casos críticos.
 - **Docker** e **Docker Compose** para fácil deploy e replicação.
-
----
-
-## 📈 Métricas e SLA
-
-- **Reporting API:** dimensionada para suportar picos de 50 req/s com <5% de perda.
-- **Resiliência:** APIs nunca ficam indisponíveis mesmo que o Worker ou Reporting falhe.
 
 ---
 
