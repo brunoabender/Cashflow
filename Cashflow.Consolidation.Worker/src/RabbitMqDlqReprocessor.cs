@@ -33,49 +33,67 @@ public class RabbitMqDlqReprocessor(IConnection connection) : BackgroundService
         consumer.ReceivedAsync += async (model, ea) =>
         {
             var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-            var retryCount = 0;
-            var maxRetries = 3;
-            var success = false;
-            var props = new BasicProperties();
+            var props = ea.BasicProperties;
+            int retryCount = 0;
+            int maxRetries = 3;
 
-            while (retryCount < maxRetries && !success)
+            if (props?.Headers != null && props.Headers.TryGetValue("x-retry", out var headerVal))
             {
-                try
-                {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-                    
-                    var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json, options);
-
-                    Console.WriteLine($"[DLQ Reprocessador] Tentativa {retryCount + 1}: {@event?.Id} | Valor: {@event?.Amount} | Tipo: {@event?.Type}");
-
-                    await _channel.BasicPublishAsync(
-                        exchange: "cashflow.exchange",
-                        routingKey: "",
-                        mandatory: false,
-                        basicProperties: props,
-                        body: Encoding.UTF8.GetBytes(json),
-                        cancellationToken: stoppingToken);
-
-                    success = true;
-                }
-                catch (Exception ex)
-                {
-                    retryCount++;
-                    Console.WriteLine($"[DLQ Reprocessador] Falha tentativa {retryCount}: {ex.Message}");
-                }
+                if (headerVal is byte[] bytes)
+                    retryCount = int.Parse(Encoding.UTF8.GetString(bytes));
+                else
+                    retryCount = Convert.ToInt32(headerVal);
             }
 
-            if (!success)
+            retryCount++;
+            bool success = false;
+
+            try
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var @event = JsonSerializer.Deserialize<TransactionCreatedEvent>(json, options);
+
+                Console.WriteLine($"[DLQ Reprocessador] Tentativa {retryCount}: {@event?.Id} | Valor: {@event?.Amount} | Tipo: {@event?.Type}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DLQ Reprocessador] Falha tentativa {retryCount}: {ex.Message}");
+                success = false;
+            }
+
+            if (!success && retryCount < maxRetries)
+            {
+                // Cria novos headers propagando e incrementando x-retry
+                var retryProps = new BasicProperties();
+                retryProps.Headers = props?.Headers != null
+                    ? new Dictionary<string, object>(props.Headers)
+                    : new Dictionary<string, object>();
+                retryProps.Headers["x-retry"] = Encoding.UTF8.GetBytes(retryCount.ToString());
+
+                Console.WriteLine($"[DLQ Reprocessador] Reenfileirando para DLQ tentativa {retryCount}");
+
+                await _channel.BasicPublishAsync(
+                    exchange: "",
+                    routingKey: "cashflow.deadletter",
+                    mandatory: false,
+                    basicProperties: retryProps,
+                    body: ea.Body,
+                    cancellationToken: stoppingToken);
+            }
+            else if (!success)
             {
                 Console.WriteLine("[DLQ Reprocessador] Encaminhando para fila permanente");
+
+                var permProps = new BasicProperties();
+                permProps.Headers = props?.Headers != null
+                    ? new Dictionary<string, object>(props.Headers)
+                    : new Dictionary<string, object>();
+
                 await _channel.BasicPublishAsync(
-                    exchange: string.Empty,
+                    exchange: "",
                     routingKey: "cashflow.deadletter.permanent",
                     mandatory: false,
-                    basicProperties: props,
+                    basicProperties: permProps,
                     body: ea.Body,
                     cancellationToken: stoppingToken);
             }
@@ -90,5 +108,4 @@ public class RabbitMqDlqReprocessor(IConnection connection) : BackgroundService
             consumer: consumer,
             cancellationToken: stoppingToken);
     }
-
 }

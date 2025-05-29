@@ -10,7 +10,9 @@ namespace Cashflow.Operations.Api.Controllers
     [Route("api/")]
     public class TokenController : Controller
     {
-        [HttpPost("[controller]/get")]
+        //Não real
+        //Sem autenticação para geração, só exibição
+        [HttpGet("[controller]/Generate")]
         public IActionResult GenerateToken()
         {
             var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("ChaveSecretaMasNesseCasoNaoÉPorqueEstaNoCodigo"));

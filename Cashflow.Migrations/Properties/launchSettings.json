@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Cashflow.Migrations": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

@@ -17,12 +17,13 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var config = builder.Configuration;
-        var redisConn = config["Redis:ConnectionString"] ?? "redis:6379";
+        var redisConnection = $"{config["Redis:Host"]}:{config["Redis:Port"]}"!;
+        Console.WriteLine(redisConnection);
 
         // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var options = ConfigurationOptions.Parse($"{redisConn},abortConnect=false");
+            var options = ConfigurationOptions.Parse($"{redisConnection},abortConnect=false");
             return ConnectionMultiplexer.Connect(options);
         });
 
@@ -30,7 +31,7 @@ internal class Program
 
         // HealthChecks
         builder.Services.AddHealthChecks()
-            .AddRedis(redisConn, name: "redis", failureStatus: HealthStatus.Unhealthy);
+            .AddRedis(redisConnection, name: "redis", failureStatus: HealthStatus.Unhealthy);
 
         //Postgres
         builder.Services.AddScoped<IDbConnection>(sp =>
