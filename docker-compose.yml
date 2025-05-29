@@ -55,10 +55,6 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - Rabbit__Host=rabbitmq
-      - Rabbit__Port=5672
-      - Rabbit__UserName=guest
-      - Rabbit__Password=guest
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     networks:
       - cashflow-network

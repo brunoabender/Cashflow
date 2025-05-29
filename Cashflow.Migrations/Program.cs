@@ -7,11 +7,14 @@ class Program
     static void Main(string[] args)
     {
         var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables()
             .Build();
 
         var connectionString = config.GetConnectionString("Postgres");
+
+        if (string.IsNullOrEmpty(connectionString))
+            throw new Exception("Configuração não pode ser nulo");
 
         var serviceProvider = new ServiceCollection()
             .AddFluentMigratorCore()
