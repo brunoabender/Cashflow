@@ -39,9 +39,8 @@ namespace Cashflow.Integration.Tests.Tests.Controller
             _network = new NetworkBuilder()
                  .WithName($"cashflow-test-network-integration_{Guid.NewGuid()}")
                  .Build();
-            await _network.CreateAsync();
 
-
+            
             _pgContainer = new ContainerBuilder()
                 .WithImage("postgres:16")
                 .WithName(HostNamePostgres)
@@ -54,8 +53,6 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .WithPortBinding(25431, 5432)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
                 .Build();
-
-            await _pgContainer.StartAsync();
 
             var pgDockerHost = "test-postgres";
             var pgDockerPort = 5432;
@@ -77,9 +74,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .DependsOn(_pgContainer)
                 .Build();
 
-            await _migrationsContainer.StartAsync();
-
-
+            
             // Redis (porta externa 26379)
             _redisContainer = new ContainerBuilder()
                 .WithImage("redis:7")
@@ -89,8 +84,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .WithNetworkAliases(HostNameRedis)
                 .WithPortBinding(26379, 6379)
                 .Build();
-            await _redisContainer.StartAsync();
-
+            
             // RabbitMQ (porta externa 25672, mgmt 15673)
             _rabbitContainer = new ContainerBuilder()
                 .WithImage("rabbitmq:3-management")
@@ -104,8 +98,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .WithPortBinding(15673, 15672)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5672))
                 .Build();
-            await _rabbitContainer.StartAsync();
-
+            
             //await Task.sle(5000);
 
             var redisHost = HostNameRedis;
@@ -133,8 +126,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .DependsOn(_pgContainer)
                 .DependsOn(_redisContainer)
                 .Build();
-            await _operationsApi.StartAsync();
-
+            
             // Reporting API (porta externa 28092)
             _reportingApi = new ContainerBuilder()
                 .WithImage("cashflowreportingapi:latest")
@@ -150,7 +142,6 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .DependsOn(_pgContainer)
                 .DependsOn(_redisContainer)
                 .Build();
-            await _reportingApi.StartAsync();
 
             // Worker
             _worker = new ContainerBuilder()
@@ -167,7 +158,18 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .DependsOn(_pgContainer)
                 .DependsOn(_rabbitContainer)
                 .Build();
+
+            await _network.CreateAsync();
+            await _pgContainer.StartAsync();
+            await _migrationsContainer.StartAsync();
+            await _redisContainer.StartAsync();
+            await _rabbitContainer.StartAsync();
+            await _operationsApi.StartAsync();
+            await _reportingApi.StartAsync();
             await _worker.StartAsync();
+
+            //Docker up
+            Thread.Sleep(TimeSpan.FromSeconds(5));
         }
 
         public async Task DisposeAsync()
@@ -189,6 +191,9 @@ namespace Cashflow.Integration.Tests.Tests.Controller
             await _redisContainer.DisposeAsync();
             await _pgContainer.DisposeAsync();
             await _migrationsContainer.DisposeAsync();
+
+            //Docker down
+            Task.Delay(TimeSpan.FromSeconds(10)).Wait();
         }
 
         [Fact]
