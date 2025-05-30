@@ -7,7 +7,7 @@ namespace Cashflow.Reporting.Api.Features.GetBalanceByDate
 {
     public class GetBalanceByDateHandler(IPostgresHandler postgresHandler, IRedisBalanceCache cache)
     {
-        public async Task<Result<Dictionary<TransactionType, decimal>>> HandleAsync(DateOnly date)
+        public async Task<Result<Dictionary<TransactionType, decimal>>> HandleAsync(string date)
         {
             try
             {
@@ -16,7 +16,7 @@ namespace Cashflow.Reporting.Api.Features.GetBalanceByDate
                     return Result.Ok(cached);
 
                 var balance = await postgresHandler.GetTotalsByType(date);
-                await cache.SetAsync(balance);
+                await cache.SetAsync(date, balance);
 
                 return Result.Ok(balance);
             }

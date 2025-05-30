@@ -13,10 +13,10 @@ namespace Cashflow.Operations.Api.Infrastructure.Messaging
         {
             var factory = new ConnectionFactory
             {
-                HostName = _config["Rabbit:Host"] ?? "localhost",
+                HostName = _config["Rabbit:Host"]!,
                 Port = int.TryParse(_config["Rabbit:Port"], out var port) ? port : 5672,
-                UserName = _config["Rabbit:UserName"] ?? "guest",
-                Password = _config["Rabbit:Password"] ?? "guest"
+                UserName = _config["Rabbit:UserName"]!,
+                Password = _config["Rabbit:Password"]!
             };
 
             _connection = await factory.CreateConnectionAsync(cancellationToken);

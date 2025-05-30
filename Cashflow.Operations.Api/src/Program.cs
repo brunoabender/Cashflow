@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using Scalar.AspNetCore;
@@ -23,7 +24,7 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var config = builder.Configuration;
-        var redisConn = config["Redis:ConnectionString"] ?? "redis:6379";
+        var redisConnection = $"{config["Redis:Host"]}:{config["Redis:Port"]}"!;
 
         var key = Encoding.ASCII.GetBytes("ChaveSecretaMasNesseCasoNaoÉPorqueEstaNoCodigo");
 
@@ -37,10 +38,9 @@ internal class Program
             options.AddOtlpExporter(otlpOptions =>
             {
                 otlpOptions.Endpoint = new Uri("http://otel-collector:4317");
-                otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                otlpOptions.Protocol = OtlpExportProtocol.Grpc;
             });
         });
-
 
         // Autenticação e Autorização
         builder.Services.AddAuthentication(options =>
@@ -73,7 +73,7 @@ internal class Program
         // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var options = ConfigurationOptions.Parse($"{redisConn},abortConnect=false");
+            var options = ConfigurationOptions.Parse($"{redisConnection},abortConnect=false");
             return ConnectionMultiplexer.Connect(options);
         });
 
@@ -84,7 +84,7 @@ internal class Program
 
         // HealthChecks
         builder.Services.AddHealthChecks()
-            .AddRedis(redisConn, name: "redis", failureStatus: HealthStatus.Unhealthy)
+            .AddRedis(redisConnection, name: "redis", failureStatus: HealthStatus.Unhealthy)
             .AddRabbitMQ(sp => sp.GetRequiredService<RabbitMqConnectionProvider>().Connection, name: "rabbitmq", failureStatus: HealthStatus.Unhealthy);
 
         // Aplicação

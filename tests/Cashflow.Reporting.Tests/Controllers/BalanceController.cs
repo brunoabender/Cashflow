@@ -26,7 +26,7 @@ namespace Cashflow.Integration.Tests.Controllers
         public async Task GetBalanceByDate_ReturnsOk_WhenSuccessful()
         {
             // Arrange
-            var date = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)).ToString("dd-MM-yyyy");
             var totals = new Dictionary<TransactionType, decimal>
             {
                 { TransactionType.Credit, 100 },
@@ -36,7 +36,7 @@ namespace Cashflow.Integration.Tests.Controllers
             var handler = new GetBalanceByDateHandler(_mockPostgresHandler.Object, _mockCache.Object);
             _mockCache.Setup(x => x.GetAsync(date)).ReturnsAsync((Dictionary<TransactionType, decimal>?)null);
             _mockPostgresHandler.Setup(x => x.GetTotalsByType(date)).ReturnsAsync(totals);
-            _mockCache.Setup(x => x.SetAsync(totals)).Returns(Task.CompletedTask);
+            _mockCache.Setup(x => x.SetAsync(date, totals)).Returns(Task.CompletedTask);
 
             // Act
             var result = await _controller.GetBalanceByDate(date);
@@ -51,7 +51,7 @@ namespace Cashflow.Integration.Tests.Controllers
         public async Task GetBalanceByDate_ReturnsError_WhenHandlerFails()
         {
             // Arrange
-            var date = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)).ToString("dd-MM-yyyy");
             var handler = new GetBalanceByDateHandler(_mockPostgresHandler.Object, _mockCache.Object);
 
             _mockCache.Setup(x => x.GetAsync(date)).ReturnsAsync((Dictionary<TransactionType, decimal>?)null);
@@ -63,6 +63,34 @@ namespace Cashflow.Integration.Tests.Controllers
 
             // Assert
             result.ShouldBeOfType<ObjectResult>().StatusCode.ShouldBe(500);
+        }
+
+        [Fact]
+        public async Task GetBalanceByDate_ReturnsError_WhenDataIsNotValid()
+        {
+            // Arrange
+            var date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1));
+            var handler = new GetBalanceByDateHandler(_mockPostgresHandler.Object, _mockCache.Object);
+
+            // Act
+            var result = await _controller.GetBalanceByDate(date.ToString());
+
+            // Assert
+            result.ShouldBeOfType<BadRequestObjectResult>().StatusCode.ShouldBe(400);
+        }
+
+        [Fact]
+        public async Task GetBalanceByDate_ReturnsError_WhenDataIsFutureDate()
+        {
+            // Arrange
+            var date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(3));
+            var handler = new GetBalanceByDateHandler(_mockPostgresHandler.Object, _mockCache.Object);
+
+            // Act
+            var result = await _controller.GetBalanceByDate(date.ToString());
+
+            // Assert
+            result.ShouldBeOfType<BadRequestObjectResult>().StatusCode.ShouldBe(400);
         }
     }
 }

@@ -38,13 +38,24 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
-    volumes:
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d cashflowdb"]
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - cashflow-network
+  
+  # --- Migrations ---
+  migrations:
+    build:
+      context: .
+      dockerfile: Cashflow.Migrations/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     networks:
       - cashflow-network
 
@@ -64,14 +75,17 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - RabbitMQ__HostName=rabbitmq
+      - Rabbit__Host=rabbitmq
+      - Rabbit__Port=5672
+      - Rabbit__UserName=guest
+      - Rabbit__Password=guest
       - Redis__Host=redis
-      - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
+      - Redis__Port=6379
     ports:
       - "8080:8080"
     networks:
       - cashflow-network
-
+      
   cashflow.consolidation.worker:
     image: ${DOCKER_REGISTRY-}cashflowconsolidationworker
     build:
@@ -86,7 +100,10 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - RabbitMQ__HostName=rabbitmq
+      - Rabbit__Host=rabbitmq
+      - Rabbit__Port=5672
+      - Rabbit__UserName=guest
+      - Rabbit__Password=guest
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     networks:
       - cashflow-network
@@ -107,6 +124,7 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8084
       - Redis__Host=redis
+      - Redis__Port=6379
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=cashflowdb;Username=postgres;Password=postgres
     ports:
       - "8082:8084"
@@ -131,20 +149,6 @@ services:
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - cashflow-network
-
-  # --- Promtail (log collector) ---
-  promtail:
-    image: grafana/promtail:2.9.4
-    container_name: cashflow-promtail
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./promtail-config.yml:/etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
     networks:
       - cashflow-network
 
