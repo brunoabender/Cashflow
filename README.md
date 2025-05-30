@@ -187,8 +187,6 @@ POST /api/auth/token
 - Adicionar observabilidade (metrics, tracing, logging distribuído).
 - Melhorar gestão de erros e retries no worker.
 - Configurar readiness/liveness probes para Kubernetes.
-- Implementar monitoramento de saúde dos serviços (Health Checks completos).
-- Tem um PR aberto para Main com a parte de migrations e o começo dos testes de integração. Os testes estão falhando porque o a migration não estava conseguindo subir para o banco e trava do worker para frente.
 
 ---
 
