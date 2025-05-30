@@ -42,7 +42,6 @@ internal class Program
             });
         });
 
-
         // Autenticação e Autorização
         builder.Services.AddAuthentication(options =>
         {

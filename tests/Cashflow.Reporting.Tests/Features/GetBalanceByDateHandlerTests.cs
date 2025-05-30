@@ -11,7 +11,7 @@ public class GetBalanceByDateHandlerTests
 {
     private readonly Mock<IPostgresHandler> _mockPostgresHandler = new();
     private readonly Mock<IRedisBalanceCache> _mockCache = new();
-    private readonly DateOnly _testDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private readonly string _testDate = DateOnly.FromDateTime(DateTime.UtcNow).ToString();
 
     [Fact]
     public async Task HandleAsync_ShouldReturnCachedResult_WhenCacheExists()
@@ -32,7 +32,7 @@ public class GetBalanceByDateHandlerTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldBe(cachedResult);
-        _mockPostgresHandler.Verify(x => x.GetTotalsByType(It.IsAny<DateOnly>()), Times.Never);
+        _mockPostgresHandler.Verify(x => x.GetTotalsByType(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class GetBalanceByDateHandlerTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldBe(dbResult);
-        _mockCache.Verify(c => c.SetAsync(dbResult), Times.Once);
+        _mockCache.Verify(c => c.SetAsync(_testDate, dbResult), Times.Once);
     }
 
     [Fact]

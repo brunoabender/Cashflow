@@ -8,8 +8,14 @@ namespace Cashflow.Reporting.Api.Infrastructure.PostgreeConector
     public class PostgresHandler(IConfiguration config) : IPostgresHandler
     {
         private readonly string _connectionString = config.GetConnectionString("Postgres")!;
-        public async Task<Dictionary<TransactionType, decimal>> GetTotalsByType(DateOnly date)
+
+        public async Task<Dictionary<TransactionType, decimal>> GetTotalsByType(string date)
         {
+            var formats = new[] { "dd-MM-yyyy", "dd/MM/yyyy", "yyyy-MM-dd" };
+            
+            if (!DateOnly.TryParseExact(date, formats, null, System.Globalization.DateTimeStyles.None, out var parsedDate))
+                throw new ArgumentException("Formato de data inválido. Use dd-MM-yyyy ou yyyy-MM-dd.");
+            
             await using var conn = new NpgsqlConnection(_connectionString);
 
             const string sql = """
@@ -21,7 +27,7 @@ namespace Cashflow.Reporting.Api.Infrastructure.PostgreeConector
 
             var rows = await conn.QueryAsync<(int type, decimal total)>(
                 sql,
-                new { Date = date.ToDateTime(TimeOnly.MinValue) });
+                new { Date = parsedDate.ToDateTime(TimeOnly.MinValue) });
 
             var result = new Dictionary<TransactionType, decimal>();
 

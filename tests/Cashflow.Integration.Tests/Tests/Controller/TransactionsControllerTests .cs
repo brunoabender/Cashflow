@@ -40,7 +40,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                  .WithName($"cashflow-test-network-integration_{Guid.NewGuid()}")
                  .Build();
 
-            
+
             _pgContainer = new ContainerBuilder()
                 .WithImage("postgres:16")
                 .WithName(HostNamePostgres)
@@ -74,7 +74,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .DependsOn(_pgContainer)
                 .Build();
 
-            
+
             // Redis (porta externa 26379)
             _redisContainer = new ContainerBuilder()
                 .WithImage("redis:7")
@@ -84,7 +84,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .WithNetworkAliases(HostNameRedis)
                 .WithPortBinding(26379, 6379)
                 .Build();
-            
+
             // RabbitMQ (porta externa 25672, mgmt 15673)
             _rabbitContainer = new ContainerBuilder()
                 .WithImage("rabbitmq:3-management")
@@ -98,7 +98,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .WithPortBinding(15673, 15672)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5672))
                 .Build();
-            
+
             //await Task.sle(5000);
 
             var redisHost = HostNameRedis;
@@ -126,7 +126,7 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 .DependsOn(_pgContainer)
                 .DependsOn(_redisContainer)
                 .Build();
-            
+
             // Reporting API (porta externa 28092)
             _reportingApi = new ContainerBuilder()
                 .WithImage("cashflowreportingapi:latest")
@@ -195,7 +195,6 @@ namespace Cashflow.Integration.Tests.Tests.Controller
             //Docker down
             Task.Delay(TimeSpan.FromSeconds(10)).Wait();
         }
-
         [Fact]
         public async Task Should_Create_Transaction_And_Retrieve_Balance()
         {
@@ -204,9 +203,11 @@ namespace Cashflow.Integration.Tests.Tests.Controller
             var opsApiUrl = $"http://{opsApiHost}:{opsApiPort}";
 
             using var client = new HttpClient { BaseAddress = new Uri(opsApiUrl) };
-            var responseToken = await client.GetAsync("/api/Token/Generate");
-            var tokenResult = await responseToken.Content.ReadFromJsonAsync<TokenResponse>();
 
+            // Token para Operations API
+            var responseToken = await client.GetAsync("/api/Token/Generate");
+            responseToken.EnsureSuccessStatusCode();
+            var tokenResult = await responseToken.Content.ReadFromJsonAsync<TokenResponse>();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult!.Token);
 
             var debits = new[]
@@ -215,8 +216,8 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 new { Amount = 600m,  IdempotencyKey = Guid.NewGuid(), Type = 1 }
             };
 
-            var credits = new[]
-            {
+                    var credits = new[]
+                    {
                 new { Amount = 1000m, IdempotencyKey = Guid.NewGuid(), Type = 2 },
                 new { Amount = 500m,  IdempotencyKey = Guid.NewGuid(), Type = 2 }
             };
@@ -233,27 +234,35 @@ namespace Cashflow.Integration.Tests.Tests.Controller
                 resp.EnsureSuccessStatusCode();
             }
 
+            // Reporting API
             var repApiHost = _reportingApi.Hostname;
             var repApiPort = _reportingApi.GetMappedPublicPort(8092);
             var repApiUrl = $"http://{repApiHost}:{repApiPort}";
 
             using var reportingClient = new HttpClient { BaseAddress = new Uri(repApiUrl) };
 
+            // Token para Reporting API
+            var reportingTokenResponse = await reportingClient.GetAsync("/token/generate");
+            reportingTokenResponse.EnsureSuccessStatusCode();
+            var reportingTokenResult = await reportingTokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
+
+            reportingClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", reportingTokenResult!.Token);
+
             var expectedDebit = debits.Sum(x => x.Amount);
             var expectedCredit = credits.Sum(x => x.Amount);
 
             var balanceResponse = await WaitForBalanceAsync(
                 reportingClient,
-                $"/transactions/balance/{DateTime.UtcNow:yyyy-MM-dd}",
+                $"/transactions/balance?date={DateTime.UtcNow:dd-MM-yyyy}",
                 expectedDebit,
                 expectedCredit
             );
 
-            balanceResponse.ShouldNotBeNull("O saldo esperado não foi processado dentro do timeout.");
             balanceResponse!.Totals.Debit.ShouldBe(expectedDebit);
             balanceResponse.Totals.Credit.ShouldBe(expectedCredit);
+            balanceResponse.Date.ShouldBe(DateTime.UtcNow.ToString("dd-MM-yyyy"));
         }
-
 
         [Fact]
         public async Task Should_Block_Same_Request_Idpotency()

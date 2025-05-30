@@ -10,7 +10,7 @@ namespace Cashflow.Integration.Tests.Entities
 
     public class BalanceResponse
     {
-        public DateTime Date { get; set; }
-        public BalanceTotals Totals { get; set; }
+        public string Date { get; set; }
+        public required BalanceTotals Totals { get; set; }
     }
 }
